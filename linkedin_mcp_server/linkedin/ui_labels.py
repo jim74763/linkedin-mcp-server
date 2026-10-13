@@ -143,6 +143,17 @@ _COUNT_LABELS: dict[str, dict[str, tuple[str, ...]]] = {
         "it": ("reazione", "reazioni"),
         "pt": ("reação", "reações", "reacao", "reacoes"),
     },
+    # Not a post counter, but a header line ("500 followers") that reads like a
+    # relative time unless it is recognised as a count.
+    "followers": {
+        "en": ("follower", "followers"),
+        "nl": ("volger", "volgers"),
+        "de": ("follower", "abonnenten"),
+        "fr": ("abonné", "abonnés"),
+        "es": ("seguidor", "seguidores"),
+        "it": ("follower", "seguaci"),
+        "pt": ("seguidor", "seguidores"),
+    },
     "replies": {
         "en": ("reply", "replies"),
         "nl": ("antwoord", "antwoorden"),

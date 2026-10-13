@@ -104,6 +104,8 @@ def test_counts_parse_across_separator_styles(token, expected):
         ("2 Impressionen", ("impressions", 2)),
         ("1 Reply", ("replies", 1)),
         ("2 antwoorden", ("replies", 2)),
+        ("15,000 followers", ("followers", 15000)),
+        ("500 volgers", ("followers", 500)),
         ("5 people like this", None),
         ("2024 results", None),
     ],

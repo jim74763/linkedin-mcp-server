@@ -70,10 +70,12 @@ def register_post_tools(
             "feed_post" permalinks read from the page's payload responses —
             /feed/update/<urn>/ or /posts/<slug>, both valid permalinks) and
             section_errors. The DOM carries no per-post permalink anchors;
-            captured permalinks are not aligned to result order. The LLM
-            should parse the raw text to extract each post's author,
-            headline/role, company, body, posted date, and reaction/comment
-            counts.
+            captured permalinks are not aligned to result order. Also posts:
+            each post as {index, text, reactions, comments, reposts,
+            impressions} plus author, time and, only when the page gave
+            exactly one permalink per post, url and activity_id. The counts
+            are integers, or null when the post does not show them. The LLM
+            may still read the raw text for headline/role and company.
         """
         try:
             extractor = await get_ready_extractor(ctx, tool_name="search_posts")

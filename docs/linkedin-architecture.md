@@ -39,6 +39,7 @@ a page-owning collaborator.
 | `notification_parser` | `NOTIFICATION_FILTERS`, `Notification`, `classify_links()`, `parse_notifications()` | `browser-free` |
 | `notifications` | `NOTIFICATIONS_URL`, `NotificationReader` | `page-owning` |
 | `person` | `PersonReader` | `page-owning` |
+| `post_parser` | `PostItem`, `parse_posts()`, `permalinks()`, `structured_posts()`, `with_posts()` | `browser-free` |
 | `posts` | `PostSearch` | `browser-free` |
 | `profile_page` | `MessageTarget`, `MessageTargetResolution`, `ProfilePageReader`, `ReadMessageTarget` | `browser-free` |
 | `search_urls` | `CONTENT_DATE_POSTED_MAP`, `EXPERIENCE_LEVEL_MAP`, `JOB_DATE_POSTED_MAP`, `JOB_TYPE_MAP`, `NETWORK_TOKENS`, `SORT_BY_MAP`, `WORK_TYPE_MAP`, `build_company_search_url()`, `build_content_search_url()`, `build_job_search_url()`, `build_people_search_url()` | `browser-free` |
@@ -52,7 +53,7 @@ a page-owning collaborator.
 - `capture` -> `content`, `contracts`, `feed_payload`, `link_metadata`, `navigation`, `session`, `text`
 - `comment_parser` -> `ui_labels`
 - `comments` -> `comment_parser`, `content`, `contracts`, `identifiers`, `navigation`, `session`, `text`, `ui_labels`
-- `company` -> `capture`, `contracts`, `fields`, `identifiers`, `link_metadata`, `search_urls`, `session`
+- `company` -> `capture`, `contracts`, `fields`, `identifiers`, `link_metadata`, `post_parser`, `search_urls`, `session`
 - `connection` -> _(none)_
 - `connection_actions` -> `connection`, `identifiers`, `navigation`, `session`
 - `content` -> `session`, `text`
@@ -71,8 +72,9 @@ a page-owning collaborator.
 - `navigation` -> `session`
 - `notification_parser` -> `comment_parser`, `identifiers`, `ui_labels`
 - `notifications` -> `content`, `contracts`, `navigation`, `notification_parser`, `session`, `text`
-- `person` -> `capture`, `contracts`, `fields`, `identifiers`, `link_metadata`, `navigation`, `profile_page`, `search_urls`, `session`, `text`
-- `posts` -> `capture`, `contracts`, `link_metadata`, `search_urls`
+- `person` -> `capture`, `contracts`, `fields`, `identifiers`, `link_metadata`, `navigation`, `post_parser`, `profile_page`, `search_urls`, `session`, `text`
+- `post_parser` -> `identifiers`, `ui_labels`
+- `posts` -> `capture`, `contracts`, `link_metadata`, `post_parser`, `search_urls`
 - `profile_page` -> `session`
 - `search_urls` -> `contracts`
 - `session` -> _(none)_

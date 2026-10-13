@@ -103,7 +103,13 @@ def register_person_tools(
             underlying profile text and links are never substituted. Existing suspected
             rate-limit retry and stop behavior is retained.
             Includes unknown_sections when unrecognised names are passed.
-            The LLM should parse the raw text in each section.
+            When the posts section is read, a top-level posts list holds each
+            post as {index, text, reactions, comments, reposts, impressions}
+            plus author, time and, only when the page gave exactly one
+            permalink per post, url and activity_id. The counts are integers,
+            or null when the post does not show them, and are read by shape and
+            a per-language label table, so they hold for non-English accounts.
+            The LLM should parse the raw text in each other section.
         """
         try:
             linkedin_username = normalize_person_identifier(linkedin_username)

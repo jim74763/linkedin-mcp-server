@@ -28,6 +28,7 @@ from linkedin_mcp_server.linkedin.identifiers import (
 )
 from linkedin_mcp_server.linkedin.link_metadata import Reference
 from linkedin_mcp_server.linkedin.navigation import PageNavigator
+from linkedin_mcp_server.linkedin.post_parser import with_posts
 from linkedin_mcp_server.linkedin.profile_page import ProfilePageReader
 from linkedin_mcp_server.linkedin.search_urls import build_people_search_url
 from linkedin_mcp_server.linkedin.session import NAV_DELAY, PageSession
@@ -340,6 +341,7 @@ class PersonReader:
             result["references"] = references
         if section_errors:
             result["section_errors"] = section_errors
+        with_posts(result, "posts")
 
         if callbacks:
             await callbacks.on_complete("person profile", result)

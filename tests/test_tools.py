@@ -1110,6 +1110,49 @@ class TestCompanyTools:
         assert "pages_visited" not in result
         assert "sections_requested" not in result
 
+    async def test_get_company_posts_returns_structured_posts(
+        self, mock_context, serve_extractor
+    ):
+        mock_extractor = MagicMock()
+        mock_extractor.extract_page = AsyncMock(
+            return_value=ExtractedSection(
+                text=(
+                    "Feed post number 1\nAcme\n2w \u2022\nWe are hiring.\n"
+                    "12\n3 comments\n1 repost\nLike\nComment"
+                ),
+                references=[
+                    {
+                        "kind": "feed_post",
+                        "url": "/feed/update/urn:li:activity:7214916299838103554/",
+                    }
+                ],
+            )
+        )
+
+        from linkedin_mcp_server.tools.company import register_company_tools
+
+        mcp = FastMCP("test")
+        register_company_tools(mcp)
+
+        serve_extractor(mock_extractor)
+        tool_fn = await get_tool_fn(mcp, "get_company_posts")
+        result = await tool_fn("testcorp", mock_context)
+
+        assert result["posts"] == [
+            {
+                "index": 0,
+                "text": "We are hiring.",
+                "reactions": 12,
+                "comments": 3,
+                "reposts": 1,
+                "impressions": None,
+                "author": "Acme",
+                "time": "2w",
+                "url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+                "activity_id": "7214916299838103554",
+            }
+        ]
+
     async def test_get_company_posts_passes_max_scrolls(
         self, mock_context, serve_extractor
     ):
@@ -2263,6 +2306,37 @@ class TestFeedTools:
         assert "feed" in result["sections"]
         assert result["sections"]["feed"] == "Post 1\nPost 2"
         assert "posts" not in result
+
+    async def test_get_feed_returns_structured_posts(
+        self, mock_context, serve_extractor
+    ):
+        mock_extractor = MagicMock()
+        mock_extractor.extract_feed = AsyncMock(
+            return_value=ExtractedSection(
+                text=(
+                    "Feed post number 1\nPat\n3d \u2022\nHello feed.\n4\nLike\nComment"
+                ),
+                references=[],
+            )
+        )
+
+        from linkedin_mcp_server.tools.feed import register_feed_tools
+
+        mcp = FastMCP("test")
+        register_feed_tools(mcp)
+
+        serve_extractor(mock_extractor)
+        tool_fn = await get_tool_fn(mcp, "get_feed")
+        result = await tool_fn(mock_context)
+
+        [post] = result["posts"]
+        assert (post["author"], post["time"], post["text"]) == (
+            "Pat",
+            "3d",
+            "Hello feed.",
+        )
+        assert post["reactions"] == 4 and post["comments"] is None
+        assert "url" not in post
 
     async def test_get_feed_surfaces_references(self, mock_context, serve_extractor):
         """References from the extractor flow through to the tool result."""

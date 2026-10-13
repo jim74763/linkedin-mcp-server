@@ -21,6 +21,7 @@ from linkedin_mcp_server.error_handler import raise_tool_error
 from linkedin_mcp_server.linkedin.contracts import RATE_LIMITED_SECTION_TEXT
 from linkedin_mcp_server.linkedin.contracts import rate_limited_section_error
 from linkedin_mcp_server.linkedin.link_metadata import Reference
+from linkedin_mcp_server.linkedin.post_parser import with_posts
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +60,13 @@ def register_feed_tools(
             - section_errors: present when the feed is rate-limited or
               extraction fails.
 
+            Also posts: each post as {index, text, reactions, comments, reposts,
+            impressions} plus author, time and, only when the page gave exactly
+            one permalink per post, url and activity_id. The counts are
+            integers, or null when the post does not show them.
+
             Truncated posts are not auto-expanded; full text for any post
-            is reachable via its permalink in references["feed"]. The LLM
-            should parse sections["feed"] for post bodies.
+            is reachable via its permalink in references["feed"].
         """
         try:
             extractor = await get_ready_extractor(ctx, tool_name="get_feed")
@@ -93,7 +98,7 @@ def register_feed_tools(
                 result["references"] = references
             if section_errors:
                 result["section_errors"] = section_errors
-            return result
+            return with_posts(result, "feed")
 
         except AuthenticationError as e:
             try:
