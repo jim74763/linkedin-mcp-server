@@ -75,7 +75,7 @@ def _author_name(text: str) -> str:
     return re.split(r"\s+[•·]\s*", first, maxsplit=1)[0].strip()
 
 
-def _distinct_authors(authors: list[Author]) -> list[tuple[str, str, float | None]]:
+def distinct_authors(authors: list[Author]) -> list[tuple[str, str, float | None]]:
     """``(slug, name, left)`` per link that names a member, adjacent repeats merged.
 
     Each comment carries an avatar link and a name link to the same member, so
@@ -95,7 +95,7 @@ def _distinct_authors(authors: list[Author]) -> list[tuple[str, str, float | Non
     return result
 
 
-def _block_starts(
+def block_starts(
     lines: list[str], authors: list[tuple[str, str, float | None]]
 ) -> list[tuple[int, int]]:
     """``(line index, author index)`` for the line that opens each comment.
@@ -170,7 +170,7 @@ def parse_comments(text: str, authors: list[Author]) -> list[Comment]:
     open a comment, so a link the parse could not place costs nothing.
     """
     lines = non_empty_lines(text)
-    members = _distinct_authors(authors)
+    members = distinct_authors(authors)
     if not lines or not members:
         return []
 
@@ -178,7 +178,7 @@ def parse_comments(text: str, authors: list[Author]) -> list[Comment]:
     start_line = sort_at + 1 if sort_at is not None else 0
     starts = [
         (line_index + start_line, member)
-        for line_index, member in _block_starts(lines[start_line:], members)
+        for line_index, member in block_starts(lines[start_line:], members)
     ]
     if sort_at is None and starts:
         # The post's own header opens the page and is not a comment.

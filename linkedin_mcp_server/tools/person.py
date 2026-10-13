@@ -178,8 +178,12 @@ def register_person_tools(
                 slug-based lookup, use get_company_employees instead.
 
         Returns:
-            Dict with url, sections (name -> raw text), and optional references.
-            The LLM should parse the raw text to extract individual people and their profiles.
+            Dict with url, sections (name -> raw text), optional references and,
+            when result cards could be read, ``people``: a list of objects with
+            ``name``, ``profile_slug``, ``profile_url``, ``headline``,
+            ``location`` and ``connection_degree`` (1, 2 or 3;
+            ``connection_degree_or_more`` marks 3+), each present only when the
+            card showed it. Fall back to the raw text when ``people`` is absent.
         """
         try:
             # The builder refuses a filter LinkedIn would ignore. Doing it here

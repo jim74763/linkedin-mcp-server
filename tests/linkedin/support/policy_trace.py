@@ -675,6 +675,7 @@ def semantic_program_id(program: str) -> str:
         ("MAX_HEADING_CONTAINERS", "root_content"),
         ("anchor.getBoundingClientRect().left", "comment_author_links"),
         ("querySelectorAll('main article')", "notification_cards"),
+        ("slice(0, 400).map(anchor", "search_profile_links"),
         ("SIDEBAR_SECTIONS", "sidebar_profiles"),
         ("showAllUrls", "sidebar_profiles"),
         ("hasInvite", "connection_action_signals"),

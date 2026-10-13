@@ -422,3 +422,26 @@ def language_picker_start(lines: list[str]) -> int | None:
         else:
             run = 0
     return None
+
+
+# --- People cards ------------------------------------------------------------
+
+# Whole-line button labels on a people search card. A card reads name, degree,
+# headline, location and then its buttons, so the first of these ends the facts.
+_CARD_ACTIONS: dict[str, tuple[str, ...]] = {
+    "en": ("connect", "follow", "message", "pending", "following", "save"),
+    "nl": ("verbinden", "volgen", "bericht", "in behandeling", "volgend", "opslaan"),
+    "de": ("vernetzen", "folgen", "nachricht", "ausstehend", "gefolgt", "speichern"),
+    "fr": ("se connecter", "suivre", "message", "en attente", "abonné", "enregistrer"),
+    "es": ("conectar", "seguir", "mensaje", "pendiente", "siguiendo", "guardar"),
+    "it": ("collegati", "segui", "messaggio", "in attesa", "seguito", "salva"),
+    "pt": ("conectar", "seguir", "mensagem", "pendente", "seguindo", "salvar"),
+}
+_CARD_ACTION_SET = frozenset(
+    label for labels in _CARD_ACTIONS.values() for label in labels
+)
+
+
+def is_card_action(line: str) -> bool:
+    """Whether *line* is only a button label on a search result card."""
+    return line.strip().casefold() in _CARD_ACTION_SET

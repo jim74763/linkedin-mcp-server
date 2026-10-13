@@ -100,14 +100,30 @@
       "kind": "evaluate",
       "operation": "root_content",
       "program_digest": "e6b2be4ebddd"
+    },
+    {
+      "call": "search_people",
+      "kind": "evaluate",
+      "operation": "search_profile_links",
+      "program_digest": "67f7ded70c35"
     }
   ],
   "result": {
+    "people": [
+      {
+        "connection_degree": 2,
+        "headline": "Mathematician",
+        "location": "London",
+        "name": "Ada Lovelace",
+        "profile_slug": "ada-lovelace",
+        "profile_url": "/in/ada-lovelace/"
+      }
+    ],
     "section_names": [
       "search_results"
     ],
     "sections": {
-      "search_results": "Result content"
+      "search_results": "Ada Lovelace\n• 2nd\nMathematician\nLondon"
     },
     "url": "https://www.linkedin.com/search/results/people/?keywords=analyst&network=%5B%22F%22%5D"
   },

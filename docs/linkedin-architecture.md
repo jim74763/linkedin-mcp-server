@@ -17,7 +17,7 @@ a page-owning collaborator.
 | --- | --- | --- |
 | `__init__` | _(no public definitions)_ | `browser-free` |
 | `capture` | `CaptureMode`, `CapturePlan`, `OverlayRootNotFoundError`, `RATE_LIMIT_RETRY_DELAY`, `SectionCapture`, `capture_plan_for_url()` | `page-owning` |
-| `comment_parser` | `Author`, `COMMENT_SORTS`, `Comment`, `parse_comments()`, `profile_slug()` | `browser-free` |
+| `comment_parser` | `Author`, `COMMENT_SORTS`, `Comment`, `block_starts()`, `distinct_authors()`, `parse_comments()`, `profile_slug()` | `browser-free` |
 | `comments` | `CommentReader` | `page-owning` |
 | `company` | `CompanyReader` | `browser-free` |
 | `connection` | `ActionSignals`, `ConnectionState`, `detect_connection_state()` | `browser-free` |
@@ -38,6 +38,7 @@ a page-owning collaborator.
 | `navigation` | `PageNavigator`, `WaitUntil` | `page-owning` |
 | `notification_parser` | `NOTIFICATION_FILTERS`, `Notification`, `classify_links()`, `parse_notifications()` | `browser-free` |
 | `notifications` | `NOTIFICATIONS_URL`, `NotificationReader` | `page-owning` |
+| `people_results` | `PersonResult`, `parse_people()` | `browser-free` |
 | `person` | `PersonReader` | `page-owning` |
 | `post_parser` | `PostItem`, `parse_posts()`, `permalinks()`, `structured_posts()`, `with_posts()` | `browser-free` |
 | `posts` | `PostSearch` | `browser-free` |
@@ -45,7 +46,7 @@ a page-owning collaborator.
 | `search_urls` | `CONTENT_DATE_POSTED_MAP`, `EXPERIENCE_LEVEL_MAP`, `JOB_DATE_POSTED_MAP`, `JOB_TYPE_MAP`, `NETWORK_TOKENS`, `SORT_BY_MAP`, `WORK_TYPE_MAP`, `build_company_search_url()`, `build_content_search_url()`, `build_job_search_url()`, `build_people_search_url()` | `browser-free` |
 | `session` | `NAV_DELAY`, `PageSession` | `page-owning` |
 | `text` | `DETAIL_CAPTURE_EN_US`, `DetailCaptureTextTable`, `JOB_APPLY_EN_US`, `JOB_POSTING_EN_US`, `JOB_SEARCH_EN_US`, `JobApplyTextTable`, `JobPostingTextTable`, `JobSearchTextTable`, `SIDEBAR_CHROME_EN`, `SidebarChromeTable`, `filter_linkedin_noise_lines()`, `strip_conversation_chrome()`, `strip_linkedin_noise()`, `truncate_linkedin_noise()` | `browser-free` |
-| `ui_labels` | `FOOTER_STARTS`, `LOAD_MORE_COMMENTS_LABELS`, `MEASURED`, `POST_HEADING`, `PROMOTED_LABELS`, `RECOMMENDATION_HEADINGS`, `SORT_RECENT_LABELS`, `SORT_RELEVANT_LABELS`, `count_label()`, `is_action_label()`, `is_degree_badge()`, `is_promoted_label()`, `is_recommendation_heading()`, `is_relative_time()`, `is_sort_label()`, `language_picker_start()`, `non_empty_lines()`, `parse_count()`, `parse_degree()`, `reaction_total()`, `relative_time_text()` | `browser-free` |
+| `ui_labels` | `FOOTER_STARTS`, `LOAD_MORE_COMMENTS_LABELS`, `MEASURED`, `POST_HEADING`, `PROMOTED_LABELS`, `RECOMMENDATION_HEADINGS`, `SORT_RECENT_LABELS`, `SORT_RELEVANT_LABELS`, `count_label()`, `is_action_label()`, `is_card_action()`, `is_degree_badge()`, `is_promoted_label()`, `is_recommendation_heading()`, `is_relative_time()`, `is_sort_label()`, `language_picker_start()`, `non_empty_lines()`, `parse_count()`, `parse_degree()`, `reaction_total()`, `relative_time_text()` | `browser-free` |
 
 ## Internal import graph
 
@@ -72,7 +73,8 @@ a page-owning collaborator.
 - `navigation` -> `session`
 - `notification_parser` -> `comment_parser`, `identifiers`, `ui_labels`
 - `notifications` -> `content`, `contracts`, `navigation`, `notification_parser`, `session`, `text`
-- `person` -> `capture`, `contracts`, `fields`, `identifiers`, `link_metadata`, `navigation`, `post_parser`, `profile_page`, `search_urls`, `session`, `text`
+- `people_results` -> `comment_parser`, `ui_labels`
+- `person` -> `capture`, `comment_parser`, `contracts`, `fields`, `identifiers`, `link_metadata`, `navigation`, `people_results`, `post_parser`, `profile_page`, `search_urls`, `session`, `text`
 - `post_parser` -> `identifiers`, `ui_labels`
 - `posts` -> `capture`, `contracts`, `link_metadata`, `post_parser`, `search_urls`
 - `profile_page` -> `session`

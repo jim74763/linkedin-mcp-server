@@ -842,7 +842,14 @@ async def _single_capture_facade_scenario(method: str) -> dict[str, Any]:
     # A posting is only whole with its description heading; the other
     # facades accept any text.
     text = "About the job\nResult content" if method == "read_job" else "Result content"
+    if method == "search_people":
+        text = "Ada Lovelace\n• 2nd\nMathematician\nLondon"
     page = _page(recorder).script("evaluate:root_content", _root(text))
+    if method == "search_people":
+        page.script(
+            "evaluate:search_profile_links",
+            [{"href": "/in/ada-lovelace/", "text": "Ada Lovelace"}],
+        )
     extractor = _extractor(page)
     arguments: dict[str, Any]
     async with boundaries(recorder, clock):

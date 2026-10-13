@@ -70,7 +70,7 @@ Use code <strong>FOUNDING20</strong> for 20% off your first year. <a href="https
 | `get_company_employees` | Find company employees, optionally filtered by name, title, or skill. |
 | `search_jobs` | Find job postings by keyword and location, with job IDs for reading details. |
 | `get_saved_jobs` | List your saved job postings, with job IDs for looking up their details. |
-| `search_people` | Find people by keyword, location, connection degree, and current company. |
+| `search_people` | Find people by keyword, location, connection degree, and current company. Returns structured results (name, headline, location, connection degree, profile slug). |
 | `get_job_details` | Read a job posting's description, requirements, and company details. |
 | `get_job_apply_url` | Check whether a job uses Easy Apply or links to an employer's application. |
 | `get_feed` | Read recent posts from your home feed, as structured posts with counts and links to the originals. |
