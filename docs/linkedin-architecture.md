@@ -45,7 +45,7 @@ a page-owning collaborator.
 | `search_urls` | `CONTENT_DATE_POSTED_MAP`, `EXPERIENCE_LEVEL_MAP`, `JOB_DATE_POSTED_MAP`, `JOB_TYPE_MAP`, `NETWORK_TOKENS`, `SORT_BY_MAP`, `WORK_TYPE_MAP`, `build_company_search_url()`, `build_content_search_url()`, `build_job_search_url()`, `build_people_search_url()` | `browser-free` |
 | `session` | `NAV_DELAY`, `PageSession` | `page-owning` |
 | `text` | `DETAIL_CAPTURE_EN_US`, `DetailCaptureTextTable`, `JOB_APPLY_EN_US`, `JOB_POSTING_EN_US`, `JOB_SEARCH_EN_US`, `JobApplyTextTable`, `JobPostingTextTable`, `JobSearchTextTable`, `SIDEBAR_CHROME_EN`, `SidebarChromeTable`, `filter_linkedin_noise_lines()`, `strip_conversation_chrome()`, `strip_linkedin_noise()`, `truncate_linkedin_noise()` | `browser-free` |
-| `ui_labels` | `LOAD_MORE_COMMENTS_LABELS`, `MEASURED`, `SORT_RECENT_LABELS`, `SORT_RELEVANT_LABELS`, `count_label()`, `is_action_label()`, `is_degree_badge()`, `is_relative_time()`, `is_sort_label()`, `non_empty_lines()`, `parse_count()`, `parse_degree()`, `reaction_total()`, `relative_time_text()` | `browser-free` |
+| `ui_labels` | `FOOTER_STARTS`, `LOAD_MORE_COMMENTS_LABELS`, `MEASURED`, `POST_HEADING`, `PROMOTED_LABELS`, `RECOMMENDATION_HEADINGS`, `SORT_RECENT_LABELS`, `SORT_RELEVANT_LABELS`, `count_label()`, `is_action_label()`, `is_degree_badge()`, `is_promoted_label()`, `is_recommendation_heading()`, `is_relative_time()`, `is_sort_label()`, `language_picker_start()`, `non_empty_lines()`, `parse_count()`, `parse_degree()`, `reaction_total()`, `relative_time_text()` | `browser-free` |
 
 ## Internal import graph
 
@@ -78,7 +78,7 @@ a page-owning collaborator.
 - `profile_page` -> `session`
 - `search_urls` -> `contracts`
 - `session` -> _(none)_
-- `text` -> _(none)_
+- `text` -> `ui_labels`
 - `ui_labels` -> _(none)_
 
 ## `LinkedInExtractor` public coroutine surface

@@ -319,3 +319,106 @@ def is_sort_label(line: str) -> bool:
         lowered == label.lower()
         for label in (*SORT_RELEVANT_LABELS, *SORT_RECENT_LABELS)
     )
+
+
+# --- Page chrome -------------------------------------------------------------
+
+# "Feed post number 3", "Feed-Beitrag Nummer 3", "Feed post 3": the prefix and
+# the closing number, whatever the words between are. Every post in a list opens
+# with one, which is what splits a list into posts and what bounds a module that
+# sits between two of them.
+POST_HEADING = re.compile(r"^feed[\s-]?\S*(?:\s\S+)?\s\d+$", re.IGNORECASE)
+
+#: Headings of modules LinkedIn inserts into a page: recommendations, not content.
+RECOMMENDATION_HEADINGS: dict[str, tuple[str, ...]] = {
+    "en": (
+        "People you may know",
+        "More profiles for you",
+        "Explore premium profiles",
+        "People also viewed",
+        "Pages for you",
+        "Suggested for you",
+    ),
+    "nl": (
+        "Mensen die je misschien kent",
+        "Meer profielen voor jou",
+        "Ontdek premiumprofielen",
+        "Anderen bekeken ook",
+        "Pagina's voor jou",
+    ),
+    "de": (
+        "Personen, die Sie kennen könnten",
+        "Weitere Profile für Sie",
+        "Premium-Profile entdecken",
+        "Das haben auch andere angesehen",
+    ),
+    "fr": (
+        "Les membres que vous pourriez connaître",
+        "Autres profils pour vous",
+        "Découvrez des profils Premium",
+    ),
+    "es": ("Personas que quizá conozcas", "Más perfiles para ti"),
+    "it": ("Persone che potresti conoscere", "Altri profili per te"),
+    "pt": ("Pessoas que talvez você conheça", "Mais perfis para você"),
+}
+_RECOMMENDATION_SET = frozenset(
+    heading.casefold()
+    for headings in RECOMMENDATION_HEADINGS.values()
+    for heading in headings
+)
+
+#: The label LinkedIn puts on a paid post, as a line of its own in the header.
+PROMOTED_LABELS: dict[str, tuple[str, ...]] = {
+    "en": ("Promoted", "Sponsored"),
+    "nl": ("Gepromoot", "Gesponsord"),
+    "de": ("Anzeige", "Gesponsert"),
+    "fr": ("Sponsorisé", "Post sponsorisé", "Promu"),
+    "es": ("Promocionado", "Patrocinado"),
+    "it": ("Sponsorizzato", "Promosso"),
+    "pt": ("Promovido", "Patrocinado"),
+}
+_PROMOTED_SET = frozenset(
+    label.casefold() for labels in PROMOTED_LABELS.values() for label in labels
+)
+
+#: The first two lines of the footer link list ("About", "Accessibility").
+FOOTER_STARTS: dict[str, tuple[str, str]] = {
+    "en": ("About", "Accessibility"),
+    "nl": ("Over", "Toegankelijkheid"),
+    "de": ("Info", "Barrierefreiheit"),
+    "fr": ("À propos", "Accessibilité"),
+    "es": ("Acerca de", "Accesibilidad"),
+    "it": ("Informazioni", "Accessibilità"),
+    "pt": ("Sobre", "Acessibilidade"),
+}
+
+# "English (English)", "Nederlands (Dutch)", "Deutsch (Duits)": the language
+# picker in the footer, one language per line, the native name then the name in
+# the interface language. Matched on that shape, which no table has to know.
+_LANGUAGE_OPTION = re.compile(r"^[^\W\d_][^\n()]{0,30} \([^\W\d_][^\n()]{1,30}\)$")
+
+# Three in a row is a picker; one is a sentence with a parenthesis.
+_LANGUAGE_RUN = 3
+
+
+def is_recommendation_heading(line: str) -> bool:
+    """Whether *line* opens a recommendation module (people you may know ...)."""
+    return line.strip().casefold() in _RECOMMENDATION_SET
+
+
+def is_promoted_label(line: str) -> bool:
+    """Whether *line* is the label LinkedIn puts on a paid post."""
+    return line.strip().casefold() in _PROMOTED_SET
+
+
+def language_picker_start(lines: list[str]) -> int | None:
+    """The index where the footer's language picker starts, or ``None``."""
+    run = 0
+    for index, line in enumerate(lines):
+        if _LANGUAGE_OPTION.match(line.strip()):
+            run += 1
+            if run == _LANGUAGE_RUN:
+                return index - _LANGUAGE_RUN + 1
+        else:
+            run = 0
+    return None

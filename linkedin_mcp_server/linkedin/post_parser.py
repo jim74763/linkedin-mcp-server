@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from typing import Any, NotRequired, TypedDict
 
-import re
 
 from linkedin_mcp_server.core.exceptions import InvalidReferenceError
 from linkedin_mcp_server.linkedin.identifiers import (
@@ -31,15 +30,12 @@ from linkedin_mcp_server.linkedin.ui_labels import (
     count_label,
     is_action_label,
     is_degree_badge,
+    POST_HEADING,
     is_relative_time,
     non_empty_lines,
     reaction_total,
     relative_time_text,
 )
-
-# "Feed post number 3", "Feed-Beitrag Nummer 3", "Feed post 3": the prefix and
-# the closing number, whatever the words between are.
-_POST_HEADING = re.compile(r"^feed[\s-]?\S*(?:\s\S+)?\s\d+$", re.IGNORECASE)
 
 # Buttons that sit between a post's header and its text, and carry no text of
 # the post. Per-locale because they have no shape of their own.
@@ -90,7 +86,7 @@ class PostItem(TypedDict):
 def _split_by_heading(lines: list[str]) -> list[list[str]]:
     blocks: list[list[str]] = []
     for line in lines:
-        if _POST_HEADING.match(line):
+        if POST_HEADING.match(line):
             blocks.append([])
         elif blocks:
             blocks[-1].append(line)
