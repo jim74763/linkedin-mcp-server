@@ -449,6 +449,48 @@
     "_meta": {
       "fastmcp": {
         "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "annotations": {
+      "openWorldHint": true,
+      "readOnlyHint": true
+    },
+    "description": "Get the authenticated user's LinkedIn notifications.",
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "filter_by": {
+          "default": "all",
+          "description": "\"all\" for every notification (default), or \"my_posts\"\nfor the \"My posts\" list: reactions, comments and reposts on the\nuser's own posts.",
+          "enum": [
+            "all",
+            "my_posts"
+          ],
+          "type": "string"
+        },
+        "limit": {
+          "default": 30,
+          "description": "Maximum number of notifications to return (1-100, default\n30). The page is scrolled far enough to load about that many.",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "name": "get_notifications",
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "title": "Get Notifications"
+  },
+  {
+    "_meta": {
+      "fastmcp": {
+        "tags": [
           "person"
         ]
       }

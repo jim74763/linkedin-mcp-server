@@ -674,6 +674,7 @@ def semantic_program_id(program: str) -> str:
         ("element.ownerDocument.location.href", "owner_document_address"),
         ("MAX_HEADING_CONTAINERS", "root_content"),
         ("anchor.getBoundingClientRect().left", "comment_author_links"),
+        ("querySelectorAll('main article')", "notification_cards"),
         ("SIDEBAR_SECTIONS", "sidebar_profiles"),
         ("showAllUrls", "sidebar_profiles"),
         ("hasInvite", "connection_action_signals"),

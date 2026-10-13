@@ -899,6 +899,38 @@ async def _post_comments_scenario() -> dict[str, Any]:
     )
 
 
+async def _notifications_scenario() -> dict[str, Any]:
+    recorder = TraceRecorder("get_notifications__my_posts", _COMMON_ALLOWED)
+    clock = FakeClock(recorder)
+    page = _page(recorder).script(
+        "evaluate:root_content", _root("Charles Babbage reacted to your post\n2h")
+    )
+    page.script(
+        "evaluate:notification_cards",
+        [
+            {
+                "text": "Charles Babbage reacted to your post\n2h",
+                "links": [
+                    {"href": "/in/charles-babbage/", "text": "Charles Babbage"},
+                    {
+                        "href": "/feed/update/urn:li:activity:7214916299838103554/",
+                        "text": "",
+                    },
+                ],
+            }
+        ],
+    )
+    extractor = _extractor(page)
+    arguments: dict[str, Any] = {"filter_by": "my_posts", "limit": 10}
+    async with boundaries(recorder, clock):
+        with recorder.context("get_notifications"):
+            result = await extractor.get_notifications(**arguments)
+    page.assert_clean()
+    return recorder.trace(
+        {"method": "get_notifications", "arguments": arguments}, result
+    )
+
+
 async def _single_capture_error_scenario() -> dict[str, Any]:
     recorder = TraceRecorder("read_job__capture_error", _COMMON_ALLOWED)
     clock = FakeClock(recorder)
@@ -1130,6 +1162,7 @@ TOOL_FACADE_METHODS = {
     "get_inbox",
     "get_job_apply_url",
     "get_my_profile",
+    "get_notifications",
     "get_post_comments",
     "get_saved_jobs",
     "get_sidebar_profiles",
@@ -1220,6 +1253,7 @@ async def build_policy_traces() -> dict[str, dict[str, Any]]:
         ),
         "search-posts.json": await _single_capture_facade_scenario("search_posts"),
         "post-comments.json": await _post_comments_scenario(),
+        "notifications.json": await _notifications_scenario(),
         "inbox.json": await _conversation_scenario("get_inbox"),
         "conversation.json": await _conversation_scenario("get_conversation"),
         "search-conversations.json": await _conversation_scenario(

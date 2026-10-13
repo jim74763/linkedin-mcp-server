@@ -48,6 +48,10 @@
         "coroutine": true,
         "signature": "(self, sections: 'set[str] | None' = None, callbacks: 'ProgressCallback | None' = None, max_scrolls: 'int | None' = None) -> 'dict[str, Any]'"
       },
+      "get_notifications": {
+        "coroutine": true,
+        "signature": "(self, filter_by: 'str' = 'all', limit: 'int' = 30) -> 'dict[str, Any]'"
+      },
       "get_page_text": {
         "coroutine": true,
         "signature": "(self) -> 'str'"
@@ -110,6 +114,7 @@
       "get_inbox",
       "get_job_apply_url",
       "get_my_profile",
+      "get_notifications",
       "get_post_comments",
       "get_saved_jobs",
       "get_sidebar_profiles",
@@ -408,6 +413,34 @@
               ],
               "default": null,
               "description": "Comma-separated list of extra sections to read.\nThe main profile page is always included.\nAvailable sections: experience, education, interests, honors, languages, certifications, skills, projects, contact_info, posts\nExamples: \"experience,education\", \"contact_info\", \"skills,projects\"\nDefault (None) reads only the main profile page."
+            }
+          },
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "get_notifications": {
+        "input": {
+          "additionalProperties": false,
+          "properties": {
+            "filter_by": {
+              "default": "all",
+              "description": "\"all\" for every notification (default), or \"my_posts\"\nfor the \"My posts\" list: reactions, comments and reposts on the\nuser's own posts.",
+              "enum": [
+                "all",
+                "my_posts"
+              ],
+              "type": "string"
+            },
+            "limit": {
+              "default": 30,
+              "description": "Maximum number of notifications to return (1-100, default\n30). The page is scrolled far enough to load about that many.",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
             }
           },
           "type": "object"

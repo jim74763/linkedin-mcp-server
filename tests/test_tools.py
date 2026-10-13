@@ -45,6 +45,7 @@ def _make_mock_extractor(result: dict) -> MagicMock:
     mock.search_companies = AsyncMock(return_value=result)
     mock.search_posts = AsyncMock(return_value=result)
     mock.get_post_comments = AsyncMock(return_value=result)
+    mock.get_notifications = AsyncMock(return_value=result)
     mock.get_company_employees = AsyncMock(return_value=result)
     mock.extract_page = AsyncMock(
         return_value=ExtractedSection(text="some text", references=[])
@@ -53,7 +54,15 @@ def _make_mock_extractor(result: dict) -> MagicMock:
     return mock
 
 
-_TOOL_MODULES = ("person", "company", "job", "messaging", "feed", "post")
+_TOOL_MODULES = (
+    "person",
+    "company",
+    "job",
+    "messaging",
+    "feed",
+    "post",
+    "notification",
+)
 
 
 @pytest.fixture
@@ -262,6 +271,7 @@ async def test_invalid_reference_is_rejected_before_extractor(
         ("feed", "get_feed", {}),
         ("post", "search_posts", {"keywords": "python"}),
         ("post", "get_post_comments", {"post": "7214916299838103554"}),
+        ("notification", "get_notifications", {}),
     ],
 )
 async def test_valid_input_reaches_the_patched_readiness_call(
@@ -2387,6 +2397,47 @@ class TestFeedTools:
 
         with pytest.raises(ValidationError, match="num_posts"):
             await mcp.call_tool("get_feed", {"num_posts": 51})
+
+
+class TestNotificationTools:
+    async def test_get_notifications_passes_the_filter_and_limit_through(
+        self, mock_context, serve_extractor
+    ):
+        expected = {
+            "url": "https://www.linkedin.com/notifications/?filter=my_posts",
+            "filter": "my_posts",
+            "notifications": [{"index": 0, "action_type": "post", "headline": "x"}],
+        }
+        mock_extractor = _make_mock_extractor(expected)
+
+        from linkedin_mcp_server.tools.notification import register_notification_tools
+
+        mcp = FastMCP("test")
+        register_notification_tools(mcp)
+        serve_extractor(mock_extractor)
+        tool_fn = await get_tool_fn(mcp, "get_notifications")
+
+        result = await tool_fn(mock_context, filter_by="my_posts", limit=5)
+
+        assert result == expected
+        mock_extractor.get_notifications.assert_awaited_once_with("my_posts", 5)
+
+    @pytest.mark.parametrize(
+        ("arguments", "field"),
+        [({"filter_by": "mentions"}, "filter_by"), ({"limit": 101}, "limit")],
+    )
+    async def test_get_notifications_rejects_arguments_outside_its_schema(
+        self, arguments, field
+    ):
+        from fastmcp.exceptions import ValidationError
+
+        from linkedin_mcp_server.tools.notification import register_notification_tools
+
+        mcp = FastMCP("test")
+        register_notification_tools(mcp)
+
+        with pytest.raises(ValidationError, match=field):
+            await mcp.call_tool("get_notifications", arguments)
 
 
 class TestPostTools:

@@ -12,7 +12,8 @@ Available Tools:
 - Job tools: Job posting details and search functionality
 - Messaging tools: Inbox, conversations, search, and sending messages
 - Feed tools: Home feed reading
-- Post tools: Global post/content search
+- Post tools: Global post/content search and post comments
+- Notification tools: The notifications page
 
 Architecture:
 - FastMCP integration for MCP-compliant tool registration

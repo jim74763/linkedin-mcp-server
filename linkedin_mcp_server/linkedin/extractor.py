@@ -24,6 +24,7 @@ from linkedin_mcp_server.linkedin.job_policy import JobsTrackerStage
 from linkedin_mcp_server.linkedin.jobs import JobReader
 from linkedin_mcp_server.linkedin.message_sender import MessageSender
 from linkedin_mcp_server.linkedin.navigation import PageNavigator
+from linkedin_mcp_server.linkedin.notifications import NotificationReader
 from linkedin_mcp_server.linkedin.person import PersonReader
 from linkedin_mcp_server.linkedin.posts import PostSearch
 from linkedin_mcp_server.linkedin.profile_page import ProfilePageReader
@@ -68,6 +69,7 @@ class LinkedInExtractor:
         self._jobs = JobReader(navigator, capture, job_pages)
         self._posts = PostSearch(capture)
         self._comments = CommentReader(session, navigator, content)
+        self._notifications = NotificationReader(session, navigator, content)
         self._conversations = ConversationReader(
             session, navigator, content, profile_page
         )
@@ -239,6 +241,12 @@ class LinkedInExtractor:
         return await self._comments.get_post_comments(
             post, sort_by=sort_by, max_load_more=max_load_more
         )
+
+    async def get_notifications(
+        self, filter_by: str = "all", limit: int = 30
+    ) -> dict[str, Any]:
+        """Read the notifications page, optionally only activity on own posts."""
+        return await self._notifications.get_notifications(filter_by, limit)
 
     async def get_inbox(self, limit: int = 20) -> dict[str, Any]:
         """List recent conversations from the messaging inbox."""
