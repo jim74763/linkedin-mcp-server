@@ -75,6 +75,7 @@ Use code <strong>FOUNDING20</strong> for 20% off your first year. <a href="https
 | `get_job_apply_url` | Check whether a job uses Easy Apply or links to an employer's application. |
 | `get_feed` | Read recent posts from your home feed, with links to the original posts. |
 | `search_posts` | Search posts by keyword, optionally limited to the past day, week, or month. |
+| `get_post_comments` | Read the comments on a post (author, text, time, reply nesting), optionally most recent first. |
 | `close_session` | Close the shared browser session without deleting your saved login. |
 
 <br/>

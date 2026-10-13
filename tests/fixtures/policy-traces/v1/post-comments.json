@@ -1,0 +1,114 @@
+{
+  "call": {
+    "arguments": {
+      "max_load_more": 0,
+      "post": "7214916299838103554"
+    },
+    "method": "get_post_comments"
+  },
+  "events": [
+    {
+      "call": "get_post_comments",
+      "callback_id": "callback-1",
+      "event": "framenavigated",
+      "kind": "listener.add"
+    },
+    {
+      "call": "get_post_comments",
+      "extra": {
+        "target_url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+        "wait_until": "domcontentloaded"
+      },
+      "kind": "boundary.trace",
+      "label": "extractor-before-goto"
+    },
+    {
+      "call": "get_post_comments",
+      "kind": "navigate",
+      "landed_url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+      "requested_url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+      "timeout_ms": 30000,
+      "wait_until": "domcontentloaded"
+    },
+    {
+      "call": "get_post_comments",
+      "description": "goto https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+      "kind": "boundary.stabilize",
+      "result": null
+    },
+    {
+      "call": "get_post_comments",
+      "extra": {
+        "target_url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+        "wait_until": "domcontentloaded"
+      },
+      "kind": "boundary.trace",
+      "label": "extractor-after-goto"
+    },
+    {
+      "call": "get_post_comments",
+      "kind": "boundary.auth_quick",
+      "result": null
+    },
+    {
+      "call": "get_post_comments",
+      "callback_id": "callback-1",
+      "event": "framenavigated",
+      "kind": "listener.remove"
+    },
+    {
+      "call": "get_post_comments",
+      "kind": "boundary.rate_limit"
+    },
+    {
+      "call": "get_post_comments",
+      "kind": "wait_for_selector",
+      "operation": "main",
+      "selector": "main",
+      "state": "visible",
+      "timeout_ms": null
+    },
+    {
+      "call": "get_post_comments",
+      "dismissed": false,
+      "kind": "boundary.modal"
+    },
+    {
+      "arg": {
+        "selectors": [
+          "main"
+        ]
+      },
+      "call": "get_post_comments",
+      "kind": "evaluate",
+      "operation": "root_content",
+      "program_digest": "e6b2be4ebddd"
+    },
+    {
+      "call": "get_post_comments",
+      "kind": "evaluate",
+      "operation": "comment_author_links",
+      "program_digest": "fd7c193410b7"
+    }
+  ],
+  "result": {
+    "comments": [
+      {
+        "author": "Charles Babbage",
+        "author_url": "/in/charles-babbage/",
+        "depth": 0,
+        "index": 0,
+        "text": "2d\nFirst!",
+        "time": "2nd"
+      }
+    ],
+    "post": {
+      "id": "7214916299838103554",
+      "kind": "activity",
+      "url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/"
+    },
+    "url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/"
+  },
+  "scenario": "get_post_comments__baseline",
+  "schema_version": 1
+}

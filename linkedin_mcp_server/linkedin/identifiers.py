@@ -55,9 +55,11 @@ __all__ = [
     "normalize_job_id",
     "normalize_opaque_id",
     "normalize_person_identifier",
+    "normalize_post_reference",
     "normalize_profile_urn",
     "normalize_thread_id",
     "person_profile_url",
+    "post_update_url",
 ]
 
 # linkedin.com and every host under it. There is no canonical host to normalize
@@ -496,3 +498,58 @@ def normalize_profile_urn(value: str) -> str:
             "result returned it, with no URL, path or query around it."
         )
     return value
+
+
+# The three entity types LinkedIn serves as a post at /feed/update/<urn>/. The
+# ids are 10+ digits; a shorter number is not a post and would cost a page load.
+_POST_URN = re.compile(r"urn:li:(?P<kind>activity|ugcPost|share):(?P<id>\d{10,})")
+_POST_SLUG = re.compile(r"-(?P<kind>activity|ugcPost|share)-(?P<id>\d{10,})(?:-|$)")
+_POST_KINDS = ("activity", "ugcPost", "share")
+
+
+def normalize_post_reference(value: str) -> tuple[str, str]:
+    """The ``(kind, id)`` of a post from a URL, a URN or a bare activity id.
+
+    Accepts what a person copies and what this server prints: the
+    ``/feed/update/urn:li:activity:<id>/`` permalink, the ``/posts/<slug>``
+    permalink whose slug carries ``-activity-<id>-``, the URN on its own, and the
+    bare number (an activity id).
+    """
+    raw = value.strip()
+    if not raw or _RAW_REFUSED.search(raw):
+        raise InvalidReferenceError(
+            "post is not a LinkedIn post. Pass a post URL, an activity URN "
+            "(urn:li:activity:<id>) or the numeric activity id."
+        )
+    if raw.isdigit() and len(raw) >= 10:
+        return "activity", raw
+    candidate = raw
+    if _HAS_SCHEME.match(raw) or "/" in raw:
+        parsed = urlparse(raw if _HAS_SCHEME.match(raw) else f"https://x{raw}")
+        if _HAS_SCHEME.match(raw):
+            host = (parsed.hostname or "").lower()
+            if not _LINKEDIN_HOST.match(host):
+                raise InvalidReferenceError(
+                    "post is not a LinkedIn post URL. Pass a linkedin.com post "
+                    "link, an activity URN or the numeric activity id."
+                )
+        candidate = unquote(parsed.path)
+    else:
+        candidate = unquote(raw)
+    urn = _POST_URN.search(candidate)
+    if urn is not None:
+        return urn.group("kind"), urn.group("id")
+    slug = _POST_SLUG.search(candidate)
+    if slug is not None:
+        return slug.group("kind"), slug.group("id")
+    raise InvalidReferenceError(
+        "post is not a LinkedIn post. Pass a post URL, an activity URN "
+        "(urn:li:activity:<id>) or the numeric activity id."
+    )
+
+
+def post_update_url(kind: str, post_id: str) -> str:
+    """The canonical permalink for a normalized ``(kind, id)`` post reference."""
+    if kind not in _POST_KINDS or not post_id.isdigit():
+        raise InvalidReferenceError("post reference is not a LinkedIn post.")
+    return f"https://www.linkedin.com/feed/update/urn:li:{kind}:{post_id}/"

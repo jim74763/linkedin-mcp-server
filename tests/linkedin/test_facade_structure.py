@@ -40,6 +40,7 @@ PUBLIC_SIGNATURES = {
     "get_job_apply_url": "(self, job_id: 'str') -> 'dict[str, Any]'",
     "get_my_profile": "(self, sections: 'set[str] | None' = None, callbacks: 'ProgressCallback | None' = None, max_scrolls: 'int | None' = None) -> 'dict[str, Any]'",
     "get_page_text": "(self) -> 'str'",
+    "get_post_comments": "(self, post: 'str', sort_by: 'str | None' = None, max_load_more: 'int' = 3) -> 'dict[str, Any]'",
     "get_saved_jobs": "(self, max_pages: 'int' = 3, stage: 'JobsTrackerStage' = 'saved') -> 'dict[str, Any]'",
     "get_sidebar_profiles": "(self, username: 'str') -> 'dict[str, Any]'",
     "read_company": "(self, company_name: 'str', requested: 'set[str]', callbacks: 'ProgressCallback | None' = None) -> 'dict[str, Any]'",
@@ -64,6 +65,7 @@ DELEGATES = {
     "get_job_apply_url": ("_jobs", "get_job_apply_url"),
     "get_my_profile": ("_person", "get_my_profile"),
     "get_page_text": ("_content", "get_page_text"),
+    "get_post_comments": ("_comments", "get_post_comments"),
     "get_saved_jobs": ("_jobs", "get_saved_jobs"),
     "get_sidebar_profiles": ("_person", "get_sidebar_profiles"),
     "read_company": ("_company", "read_company"),
@@ -88,6 +90,7 @@ DELEGATE_CALLS = {
     "get_job_apply_url": "self._jobs.get_job_apply_url(job_id)",
     "get_my_profile": "self._person.get_my_profile(sections, callbacks, max_scrolls)",
     "get_page_text": "self._content.get_page_text()",
+    "get_post_comments": "self._comments.get_post_comments(post, sort_by=sort_by, max_load_more=max_load_more)",
     "get_saved_jobs": "self._jobs.get_saved_jobs(max_pages, stage)",
     "get_sidebar_profiles": "self._person.get_sidebar_profiles(username)",
     "read_company": "self._company.read_company(company_name, requested, callbacks)",
@@ -103,6 +106,7 @@ DELEGATE_CALLS = {
 
 FACADE_STATE = {
     "_capture",
+    "_comments",
     "_company",
     "_connection",
     "_content",

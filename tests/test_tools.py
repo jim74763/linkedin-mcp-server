@@ -44,6 +44,7 @@ def _make_mock_extractor(result: dict) -> MagicMock:
     mock.get_my_profile = AsyncMock(return_value=result)
     mock.search_companies = AsyncMock(return_value=result)
     mock.search_posts = AsyncMock(return_value=result)
+    mock.get_post_comments = AsyncMock(return_value=result)
     mock.get_company_employees = AsyncMock(return_value=result)
     mock.extract_page = AsyncMock(
         return_value=ExtractedSection(text="some text", references=[])
@@ -192,6 +193,18 @@ def serve_extractor(monkeypatch: pytest.MonkeyPatch) -> Callable[[Any], AsyncMoc
             },
             "profile_urn is not a LinkedIn id",
         ),
+        (
+            "post",
+            "get_post_comments",
+            {"post": "https://www.linkedin.com/in/alice/"},
+            "post is not a LinkedIn post",
+        ),
+        (
+            "post",
+            "get_post_comments",
+            {"post": "7214916299838103554", "sort_by": "oldest"},
+            "sort_by must be one of relevant, recent",
+        ),
     ],
 )
 async def test_invalid_reference_is_rejected_before_extractor(
@@ -203,12 +216,14 @@ async def test_invalid_reference_is_rejected_before_extractor(
     from linkedin_mcp_server.tools.job import register_job_tools
     from linkedin_mcp_server.tools.messaging import register_messaging_tools
     from linkedin_mcp_server.tools.person import register_person_tools
+    from linkedin_mcp_server.tools.post import register_post_tools
 
     register_by_module = {
         "company": register_company_tools,
         "job": register_job_tools,
         "messaging": register_messaging_tools,
         "person": register_person_tools,
+        "post": register_post_tools,
     }
     mcp = FastMCP("test")
     register_by_module[module_name](mcp)
@@ -246,6 +261,7 @@ async def test_invalid_reference_is_rejected_before_extractor(
         ),
         ("feed", "get_feed", {}),
         ("post", "search_posts", {"keywords": "python"}),
+        ("post", "get_post_comments", {"post": "7214916299838103554"}),
     ],
 )
 async def test_valid_input_reaches_the_patched_readiness_call(
@@ -2374,6 +2390,45 @@ class TestFeedTools:
 
 
 class TestPostTools:
+    async def test_get_post_comments_passes_the_request_through(
+        self, mock_context, serve_extractor
+    ):
+        expected = {
+            "url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+            "comments": [{"index": 0, "author": "Jane Roe", "text": "Hi"}],
+        }
+        mock_extractor = _make_mock_extractor(expected)
+
+        from linkedin_mcp_server.tools.post import register_post_tools
+
+        mcp = FastMCP("test")
+        register_post_tools(mcp)
+        serve_extractor(mock_extractor)
+        tool_fn = await get_tool_fn(mcp, "get_post_comments")
+
+        result = await tool_fn(
+            "7214916299838103554", mock_context, sort_by="recent", max_load_more=2
+        )
+
+        assert result == expected
+        mock_extractor.get_post_comments.assert_awaited_once_with(
+            "7214916299838103554", sort_by="recent", max_load_more=2
+        )
+
+    async def test_get_post_comments_rejects_an_oversized_load_budget(self):
+        from fastmcp.exceptions import ValidationError
+
+        from linkedin_mcp_server.tools.post import register_post_tools
+
+        mcp = FastMCP("test")
+        register_post_tools(mcp)
+
+        with pytest.raises(ValidationError, match="max_load_more"):
+            await mcp.call_tool(
+                "get_post_comments",
+                {"post": "7214916299838103554", "max_load_more": 11},
+            )
+
     async def test_search_posts_success(self, mock_context, serve_extractor):
         expected = {
             "url": (

@@ -55,6 +55,7 @@ TOOL_DELEGATES = {
     "get_job_apply_url": "get_job_apply_url",
     "get_job_details": "read_job",
     "get_my_profile": "get_my_profile",
+    "get_post_comments": "get_post_comments",
     "get_person_profile": "read_person",
     "get_saved_jobs": "get_saved_jobs",
     "get_sidebar_profiles": "get_sidebar_profiles",
@@ -93,6 +94,7 @@ async def test_constructor_export_and_dependency_use_the_same_facade(monkeypatch
 
     expected_state = {
         "_capture",
+        "_comments",
         "_company",
         "_connection",
         "_content",

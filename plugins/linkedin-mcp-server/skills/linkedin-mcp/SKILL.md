@@ -43,7 +43,7 @@ instances, clear profiles, or replace the user's browser session.
   and `get_company_employees`.
 - Jobs: `search_jobs`, `get_saved_jobs`, `get_job_details`, and
   `get_job_apply_url`.
-- Content: `get_feed` and `search_posts`.
+- Content: `get_feed`, `search_posts` and `get_post_comments`.
 - Messages: `get_inbox`, `get_conversation`, and `search_conversations`.
 - Writes: `send_message` and `connect_with_person`, subject to the explicit
   authorization rules above.

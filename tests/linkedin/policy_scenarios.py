@@ -871,6 +871,34 @@ async def _single_capture_facade_scenario(method: str) -> dict[str, Any]:
     )
 
 
+async def _post_comments_scenario() -> dict[str, Any]:
+    recorder = TraceRecorder("get_post_comments__baseline", _COMMON_ALLOWED)
+    clock = FakeClock(recorder)
+    page = _page(recorder).script(
+        "evaluate:root_content",
+        _root(
+            "Ada Lovelace\n3d\nThe post.\nMost relevant\n"
+            "Charles Babbage\n2nd\n2d\nFirst!\nLike\nReply"
+        ),
+    )
+    page.script(
+        "evaluate:comment_author_links",
+        [
+            {"href": "/in/ada-lovelace/", "text": "Ada Lovelace", "left": 10},
+            {"href": "/in/charles-babbage/", "text": "Charles Babbage", "left": 10},
+        ],
+    )
+    extractor = _extractor(page)
+    arguments: dict[str, Any] = {"post": "7214916299838103554", "max_load_more": 0}
+    async with boundaries(recorder, clock):
+        with recorder.context("get_post_comments"):
+            result = await extractor.get_post_comments(**arguments)
+    page.assert_clean()
+    return recorder.trace(
+        {"method": "get_post_comments", "arguments": arguments}, result
+    )
+
+
 async def _single_capture_error_scenario() -> dict[str, Any]:
     recorder = TraceRecorder("read_job__capture_error", _COMMON_ALLOWED)
     clock = FakeClock(recorder)
@@ -1102,6 +1130,7 @@ TOOL_FACADE_METHODS = {
     "get_inbox",
     "get_job_apply_url",
     "get_my_profile",
+    "get_post_comments",
     "get_saved_jobs",
     "get_sidebar_profiles",
     "read_company",
@@ -1190,6 +1219,7 @@ async def build_policy_traces() -> dict[str, dict[str, Any]]:
             "search_companies"
         ),
         "search-posts.json": await _single_capture_facade_scenario("search_posts"),
+        "post-comments.json": await _post_comments_scenario(),
         "inbox.json": await _conversation_scenario("get_inbox"),
         "conversation.json": await _conversation_scenario("get_conversation"),
         "search-conversations.json": await _conversation_scenario(
