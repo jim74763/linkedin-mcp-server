@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlparse
 
 import logging
@@ -26,8 +26,11 @@ from linkedin_mcp_server.linkedin.identifiers import (
     normalize_person_identifier,
     person_profile_url,
 )
+from linkedin_mcp_server.linkedin.comment_parser import Author
 from linkedin_mcp_server.linkedin.link_metadata import Reference
 from linkedin_mcp_server.linkedin.navigation import PageNavigator
+from linkedin_mcp_server.linkedin.people_results import parse_people
+from linkedin_mcp_server.linkedin.post_parser import with_posts
 from linkedin_mcp_server.linkedin.profile_page import ProfilePageReader
 from linkedin_mcp_server.linkedin.search_urls import build_people_search_url
 from linkedin_mcp_server.linkedin.session import NAV_DELAY, PageSession
@@ -74,6 +77,16 @@ _HEADING_INDENT = " " * 20
 # the explicit `en-US` table in `text.py` rather than from a copy here. Two
 # substitutions instead of a literal, so changing the table changes the
 # program and nothing has to remember to change both.
+# Every profile link in the results with its visible text, in page order. The
+# names and slugs of the people come from here; the card text supplies the rest.
+_PROFILE_LINKS_JS = """() => Array.from(
+    document.querySelectorAll('main a[href*="/in/"]')
+).slice(0, 400).map(anchor => ({
+    href: anchor.getAttribute('href') || '',
+    text: (anchor.innerText || anchor.textContent || '')
+        .replace(/\\s+/g, ' ').trim(),
+}))"""
+
 _SIDEBAR_PROFILES_JS = """() => {
                 const SIDEBAR_SECTIONS = [
                     __SECTION_HEADINGS__
@@ -340,6 +353,7 @@ class PersonReader:
             result["references"] = references
         if section_errors:
             result["section_errors"] = section_errors
+        with_posts(result, "posts")
 
         if callbacks:
             await callbacks.on_complete("person profile", result)
@@ -493,7 +507,12 @@ class PersonReader:
                 ``references["about"]``.
 
         Returns:
-            {url, sections: {name: text}}
+            {url, sections: {name: text}, people: [...]}. ``people`` holds one
+            entry per result card recovered from the page: ``name``,
+            ``profile_slug``, ``profile_url``, ``headline``, ``location`` and
+            ``connection_degree`` (1, 2 or 3, with ``connection_degree_or_more``
+            for 3+), each present only when the card showed it. The key is
+            absent when no card could be recovered; ``sections`` keeps the text.
         """
         # Builds before it navigates, and the builder refuses a filter
         # LinkedIn would swallow, so an invalid token costs no page load.
@@ -529,4 +548,17 @@ class PersonReader:
             result["references"] = references
         if section_errors:
             result["section_errors"] = section_errors
+        if "search_results" in sections:
+            people = parse_people(
+                sections["search_results"], await self._profile_links()
+            )
+            if people:
+                result["people"] = people
         return result
+
+    async def _profile_links(self) -> list[Author]:
+        """Every profile link in the results, in page order, with its text."""
+        links = await self._session.run_on_linkedin(_PROFILE_LINKS_JS)
+        if not isinstance(links, list):
+            return []
+        return [cast(Author, link) for link in links if isinstance(link, dict)]

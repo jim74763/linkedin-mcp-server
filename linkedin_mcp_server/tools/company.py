@@ -24,6 +24,7 @@ from linkedin_mcp_server.linkedin.identifiers import (
     normalize_company_identifier,
 )
 from linkedin_mcp_server.linkedin.link_metadata import Reference
+from linkedin_mcp_server.linkedin.post_parser import with_posts
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +120,10 @@ def register_company_tools(
 
         Returns:
             Dict with url, sections (name -> raw text), and optional references.
-            The LLM should parse the raw text to extract individual posts.
+            Also posts: each post as {index, text, reactions, comments, reposts,
+            impressions} plus author, time and, only when the page gave exactly
+            one permalink per post, url and activity_id. The counts are
+            integers, or null when the post does not show them.
         """
         try:
             company_name = normalize_company_identifier(company_name)
@@ -157,7 +161,7 @@ def register_company_tools(
                 result["references"] = references
             if section_errors:
                 result["section_errors"] = section_errors
-            return result
+            return with_posts(result, "posts")
 
         except AuthenticationError as e:
             try:

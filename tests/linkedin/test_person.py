@@ -1903,3 +1903,53 @@ class TestSearchPeople:
         assert "location=Seattle" in result["url"]
         assert "network=%5B%22F%22%5D" in result["url"]
         assert "currentCompany=%5B%221115%22%5D" in result["url"]
+
+    async def test_search_people_returns_structured_people(self, mock_page):
+        reader = _reader(mock_page)
+        text = "Jane Doe\n• 2nd\nEngineer at Acme\nBerlin, Germany\nConnect"
+        links = [{"href": "/in/jane-doe/", "text": "Jane Doe"}]
+        with (
+            patch.object(
+                reader._capture,
+                "capture",
+                new_callable=AsyncMock,
+                return_value=extracted(text),
+            ),
+            patch.object(
+                PageSession,
+                "run_on_linkedin",
+                new_callable=AsyncMock,
+                return_value=links,
+            ) as run,
+        ):
+            result = await reader.search_people("engineer")
+
+        assert run.await_count == 1
+        assert result["sections"] == {"search_results": text}
+        assert result["people"] == [
+            {
+                "name": "Jane Doe",
+                "profile_slug": "jane-doe",
+                "profile_url": "/in/jane-doe/",
+                "connection_degree": 2,
+                "headline": "Engineer at Acme",
+                "location": "Berlin, Germany",
+            }
+        ]
+
+    async def test_search_people_without_cards_has_no_people_key(self, mock_page):
+        reader = _reader(mock_page)
+        with (
+            patch.object(
+                reader._capture,
+                "capture",
+                new_callable=AsyncMock,
+                return_value=extracted("Nothing recognisable"),
+            ),
+            patch.object(
+                PageSession, "run_on_linkedin", new_callable=AsyncMock, return_value=[]
+            ),
+        ):
+            result = await reader.search_people("engineer")
+
+        assert "people" not in result

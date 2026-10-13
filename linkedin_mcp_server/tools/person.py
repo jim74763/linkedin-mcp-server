@@ -103,7 +103,13 @@ def register_person_tools(
             underlying profile text and links are never substituted. Existing suspected
             rate-limit retry and stop behavior is retained.
             Includes unknown_sections when unrecognised names are passed.
-            The LLM should parse the raw text in each section.
+            When the posts section is read, a top-level posts list holds each
+            post as {index, text, reactions, comments, reposts, impressions}
+            plus author, time and, only when the page gave exactly one
+            permalink per post, url and activity_id. The counts are integers,
+            or null when the post does not show them, and are read by shape and
+            a per-language label table, so they hold for non-English accounts.
+            The LLM should parse the raw text in each other section.
         """
         try:
             linkedin_username = normalize_person_identifier(linkedin_username)
@@ -172,8 +178,12 @@ def register_person_tools(
                 slug-based lookup, use get_company_employees instead.
 
         Returns:
-            Dict with url, sections (name -> raw text), and optional references.
-            The LLM should parse the raw text to extract individual people and their profiles.
+            Dict with url, sections (name -> raw text), optional references and,
+            when result cards could be read, ``people``: a list of objects with
+            ``name``, ``profile_slug``, ``profile_url``, ``headline``,
+            ``location`` and ``connection_degree`` (1, 2 or 3;
+            ``connection_degree_or_more`` marks 3+), each present only when the
+            card showed it. Fall back to the raw text when ``people`` is absent.
         """
         try:
             # The builder refuses a filter LinkedIn would ignore. Doing it here

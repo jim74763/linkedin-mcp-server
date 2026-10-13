@@ -48,9 +48,17 @@
         "coroutine": true,
         "signature": "(self, sections: 'set[str] | None' = None, callbacks: 'ProgressCallback | None' = None, max_scrolls: 'int | None' = None) -> 'dict[str, Any]'"
       },
+      "get_notifications": {
+        "coroutine": true,
+        "signature": "(self, filter_by: 'str' = 'all', limit: 'int' = 30) -> 'dict[str, Any]'"
+      },
       "get_page_text": {
         "coroutine": true,
         "signature": "(self) -> 'str'"
+      },
+      "get_post_comments": {
+        "coroutine": true,
+        "signature": "(self, post: 'str', sort_by: 'str | None' = None, max_load_more: 'int' = 3) -> 'dict[str, Any]'"
       },
       "get_saved_jobs": {
         "coroutine": true,
@@ -106,6 +114,8 @@
       "get_inbox",
       "get_job_apply_url",
       "get_my_profile",
+      "get_notifications",
+      "get_post_comments",
       "get_saved_jobs",
       "get_sidebar_profiles",
       "read_company",
@@ -412,6 +422,34 @@
           "type": "object"
         }
       },
+      "get_notifications": {
+        "input": {
+          "additionalProperties": false,
+          "properties": {
+            "filter_by": {
+              "default": "all",
+              "description": "\"all\" for every notification (default), or \"my_posts\"\nfor the \"My posts\" list: reactions, comments and reposts on the\nuser's own posts.",
+              "enum": [
+                "all",
+                "my_posts"
+              ],
+              "type": "string"
+            },
+            "limit": {
+              "default": 30,
+              "description": "Maximum number of notifications to return (1-100, default\n30). The page is scrolled far enough to load about that many.",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
       "get_person_profile": {
         "input": {
           "additionalProperties": false,
@@ -449,6 +487,44 @@
           },
           "required": [
             "linkedin_username"
+          ],
+          "type": "object"
+        },
+        "output": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "get_post_comments": {
+        "input": {
+          "additionalProperties": false,
+          "properties": {
+            "max_load_more": {
+              "default": 3,
+              "description": "How many times to ask LinkedIn for more comments\n(0-10, default 3).",
+              "maximum": 10,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "post": {
+              "description": "The post to read: its URL (``/feed/update/urn:li:activity:<id>/``\nor ``/posts/<slug>``), its activity URN, or the numeric activity id.",
+              "type": "string"
+            },
+            "sort_by": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "\"recent\" for most recent first, \"relevant\" for most relevant\nfirst. Omit to keep LinkedIn's default order. The sort control\nis found by its visible label, so check sort.applied in the\nresult: when it is false the comments are in LinkedIn's\ndefault order."
+            }
+          },
+          "required": [
+            "post"
           ],
           "type": "object"
         },

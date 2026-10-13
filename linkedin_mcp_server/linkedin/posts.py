@@ -11,6 +11,7 @@ from linkedin_mcp_server.linkedin.capture import (
 )
 from linkedin_mcp_server.linkedin.contracts import RATE_LIMITED_SECTION_TEXT
 from linkedin_mcp_server.linkedin.link_metadata import Reference
+from linkedin_mcp_server.linkedin.post_parser import with_posts
 from linkedin_mcp_server.linkedin.search_urls import build_content_search_url
 
 # Content search is an infinite scroll with no ``&start=`` pagination, so
@@ -99,4 +100,4 @@ class PostSearch:
             result["references"] = references
         if section_errors:
             result["section_errors"] = section_errors
-        return result
+        return with_posts(result, "search_results")

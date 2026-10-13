@@ -23,6 +23,7 @@ from linkedin_mcp_server.linkedin.identifiers import (
     company_page_url,
     normalize_company_identifier,
 )
+from linkedin_mcp_server.linkedin.post_parser import with_posts
 from linkedin_mcp_server.linkedin.link_metadata import Reference
 from linkedin_mcp_server.linkedin.search_urls import build_company_search_url
 from linkedin_mcp_server.linkedin.session import NAV_DELAY, PageSession
@@ -131,6 +132,7 @@ class CompanyReader:
             result["references"] = references
         if section_errors:
             result["section_errors"] = section_errors
+        with_posts(result, "posts")
 
         if callbacks:
             await callbacks.on_complete("company profile", result)

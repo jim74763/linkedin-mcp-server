@@ -7,6 +7,14 @@ from dataclasses import dataclass
 import json
 import re
 
+from linkedin_mcp_server.linkedin.ui_labels import (
+    FOOTER_STARTS,
+    POST_HEADING,
+    is_promoted_label,
+    is_recommendation_heading,
+    language_picker_start,
+)
+
 
 @dataclass(frozen=True)
 class DetailCaptureTextTable:
@@ -186,13 +194,34 @@ def strip_linkedin_noise(text: str) -> str:
 
 
 def filter_linkedin_noise_lines(text: str) -> str:
-    """Remove known media/control noise lines from already-truncated content."""
-    filtered_lines = [
-        line
-        for line in text.splitlines()
-        if not any(pattern.match(line.strip()) for pattern in _NOISE_LINES)
-    ]
-    return "\n".join(filtered_lines).strip()
+    """Remove known media/control noise lines from already-truncated content.
+
+    Also compacts whitespace: trailing spaces go, lines holding nothing but
+    separators go, and a run of blank lines becomes one.
+    """
+    kept: list[str] = []
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        stripped = line.strip()
+        if any(pattern.match(stripped) for pattern in _NOISE_LINES):
+            continue
+        if stripped and _SEPARATOR_ONLY.match(stripped):
+            continue
+        if not stripped and (not kept or not kept[-1]):
+            continue
+        kept.append(line)
+    return "\n".join(kept).strip()
+
+
+# A line of bullets, pipes or dashes with no word in it: layout, not content.
+_SEPARATOR_ONLY = re.compile(r"^[\s|•·\u2022\u00b7\u2013\u2014-]+$")
+
+# A promoted post says so in its header, within the first few lines after the
+# post heading. Further down the same word may be part of the post's own text.
+_PROMOTED_WINDOW = 8
+
+# The copyright line that closes the footer.
+_COPYRIGHT_LINE = re.compile(r"^LinkedIn(?: Corporation)? ©")
 
 
 def truncate_linkedin_noise(text: str) -> str:
@@ -203,7 +232,73 @@ def truncate_linkedin_noise(text: str) -> str:
         if match and match.start() < earliest:
             earliest = match.start()
 
-    return text[:earliest].strip()
+    lines = text[:earliest].splitlines()
+    lines = _cut_footer(lines)
+    lines = _drop_page_modules(lines)
+    return "\n".join(lines).strip()
+
+
+def _cut_footer(lines: list[str]) -> list[str]:
+    """Cut at the footer's link list, copyright line or language picker.
+
+    The footer's first two links are matched per locale, as a pair, so a line
+    that is just the word "About" is not enough. The language picker and the
+    copyright line are recognised without any table.
+    """
+    stripped = [line.strip() for line in lines]
+    cut = len(lines)
+    pairs = set(FOOTER_STARTS.values())
+    for index, line in enumerate(stripped):
+        if _COPYRIGHT_LINE.match(line):
+            cut = min(cut, index)
+            break
+        following = next((item for item in stripped[index + 1 :] if item), None)
+        if following is not None and (line, following) in pairs:
+            cut = min(cut, index)
+            break
+    picker = language_picker_start(stripped)
+    if picker is not None:
+        cut = min(cut, picker)
+    return lines[:cut]
+
+
+def _drop_page_modules(lines: list[str]) -> list[str]:
+    """Remove recommendation modules and promoted posts.
+
+    In a list of posts a module sits between two of them, so it runs from its
+    heading to the next post heading and promoted posts are dropped whole. On
+    any other page a recommendation heading ends the content.
+    """
+    headings = [i for i, line in enumerate(lines) if POST_HEADING.match(line.strip())]
+    if not headings:
+        for index, line in enumerate(lines):
+            if is_recommendation_heading(line):
+                return lines[:index]
+        return lines
+
+    bounds = headings + [len(lines)]
+    kept = _truncate_at_module(lines[: headings[0]])
+    for start, end in zip(bounds, bounds[1:]):
+        block = lines[start:end]
+        module_at = next(
+            (i for i, line in enumerate(block) if is_recommendation_heading(line)),
+            None,
+        )
+        if module_at is not None:
+            block = block[:module_at]
+        header = [line.strip() for line in block[1 : 1 + _PROMOTED_WINDOW]]
+        if any(is_promoted_label(line) for line in header):
+            continue
+        kept.extend(block)
+    return kept
+
+
+def _truncate_at_module(lines: list[str]) -> list[str]:
+    """The lines before the first recommendation heading."""
+    for index, line in enumerate(lines):
+        if is_recommendation_heading(line):
+            return lines[:index]
+    return lines
 
 
 # Messaging-page chrome around an opened conversation thread. innerText on

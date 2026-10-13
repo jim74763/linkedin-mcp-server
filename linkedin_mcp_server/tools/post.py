@@ -19,7 +19,9 @@ from linkedin_mcp_server.config.schema import DEFAULT_TOOL_TIMEOUT_SECONDS
 from linkedin_mcp_server.core.exceptions import AuthenticationError
 from linkedin_mcp_server.dependencies import get_ready_extractor, handle_auth_error
 from linkedin_mcp_server.error_handler import raise_tool_error
+from linkedin_mcp_server.linkedin.comment_parser import COMMENT_SORTS
 from linkedin_mcp_server.linkedin.contracts import FilterValidationError
+from linkedin_mcp_server.linkedin.identifiers import normalize_post_reference
 
 logger = logging.getLogger(__name__)
 
@@ -68,10 +70,12 @@ def register_post_tools(
             "feed_post" permalinks read from the page's payload responses —
             /feed/update/<urn>/ or /posts/<slug>, both valid permalinks) and
             section_errors. The DOM carries no per-post permalink anchors;
-            captured permalinks are not aligned to result order. The LLM
-            should parse the raw text to extract each post's author,
-            headline/role, company, body, posted date, and reaction/comment
-            counts.
+            captured permalinks are not aligned to result order. Also posts:
+            each post as {index, text, reactions, comments, reposts,
+            impressions} plus author, time and, only when the page gave
+            exactly one permalink per post, url and activity_id. The counts
+            are integers, or null when the post does not show them. The LLM
+            may still read the raw text for headline/role and company.
         """
         try:
             extractor = await get_ready_extractor(ctx, tool_name="search_posts")
@@ -113,3 +117,80 @@ def register_post_tools(
                 raise_tool_error(relogin_exc, "search_posts")
         except Exception as e:
             raise_tool_error(e, "search_posts")  # NoReturn
+
+    @mcp.tool(
+        timeout=tool_timeout,
+        title="Get Post Comments",
+        annotations={"readOnlyHint": True, "openWorldHint": True},
+        tags={"post"},
+    )
+    async def get_post_comments(
+        post: str,
+        ctx: Context,
+        sort_by: str | None = None,
+        max_load_more: Annotated[int, Field(ge=0, le=10)] = 3,
+    ) -> dict[str, Any]:
+        """
+        Get the comments on a LinkedIn post.
+
+        Args:
+            post: The post to read: its URL (``/feed/update/urn:li:activity:<id>/``
+                or ``/posts/<slug>``), its activity URN, or the numeric activity id.
+            ctx: FastMCP context for progress reporting
+            sort_by: "recent" for most recent first, "relevant" for most relevant
+                first. Omit to keep LinkedIn's default order. The sort control
+                is found by its visible label, so check sort.applied in the
+                result: when it is false the comments are in LinkedIn's
+                default order.
+            max_load_more: How many times to ask LinkedIn for more comments
+                (0-10, default 3).
+
+        Returns:
+            Dict with url, post ({kind, id, url}), optional sort
+            ({requested, applied}) and comments: a list of {index, author,
+            author_url, text} plus time (as LinkedIn shows it, e.g. "2w"),
+            depth and reply_to (index of the parent comment) when the page
+            showed the nesting. Replies LinkedIn collapses behind a "load
+            replies" control are not expanded. sections["comments"] holds the
+            cleaned page text only when no comment could be structured.
+        """
+        try:
+            # Both checks run before the readiness call, which can install
+            # Chromium or rotate a login for an argument that was never usable.
+            normalize_post_reference(post)
+            if sort_by is not None and sort_by not in COMMENT_SORTS:
+                raise ToolError(
+                    f"sort_by must be one of {', '.join(COMMENT_SORTS)}; got {sort_by!r}"
+                )
+            extractor = await get_ready_extractor(ctx, tool_name="get_post_comments")
+            logger.info(
+                "Reading post comments: post='%s', sort_by=%s, max_load_more=%d",
+                post,
+                sort_by,
+                max_load_more,
+            )
+
+            await ctx.report_progress(
+                progress=0, total=100, message="Reading post comments"
+            )
+
+            try:
+                result = await extractor.get_post_comments(
+                    post, sort_by=sort_by, max_load_more=max_load_more
+                )
+            except FilterValidationError as e:
+                raise ToolError(str(e)) from e
+
+            await ctx.report_progress(progress=100, total=100, message="Complete")
+
+            return result
+
+        except ToolError:
+            raise
+        except AuthenticationError as e:
+            try:
+                await handle_auth_error(e, ctx)
+            except Exception as relogin_exc:
+                raise_tool_error(relogin_exc, "get_post_comments")
+        except Exception as e:
+            raise_tool_error(e, "get_post_comments")  # NoReturn

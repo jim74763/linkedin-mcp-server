@@ -44,6 +44,8 @@ def _make_mock_extractor(result: dict) -> MagicMock:
     mock.get_my_profile = AsyncMock(return_value=result)
     mock.search_companies = AsyncMock(return_value=result)
     mock.search_posts = AsyncMock(return_value=result)
+    mock.get_post_comments = AsyncMock(return_value=result)
+    mock.get_notifications = AsyncMock(return_value=result)
     mock.get_company_employees = AsyncMock(return_value=result)
     mock.extract_page = AsyncMock(
         return_value=ExtractedSection(text="some text", references=[])
@@ -52,7 +54,15 @@ def _make_mock_extractor(result: dict) -> MagicMock:
     return mock
 
 
-_TOOL_MODULES = ("person", "company", "job", "messaging", "feed", "post")
+_TOOL_MODULES = (
+    "person",
+    "company",
+    "job",
+    "messaging",
+    "feed",
+    "post",
+    "notification",
+)
 
 
 @pytest.fixture
@@ -192,6 +202,18 @@ def serve_extractor(monkeypatch: pytest.MonkeyPatch) -> Callable[[Any], AsyncMoc
             },
             "profile_urn is not a LinkedIn id",
         ),
+        (
+            "post",
+            "get_post_comments",
+            {"post": "https://www.linkedin.com/in/alice/"},
+            "post is not a LinkedIn post",
+        ),
+        (
+            "post",
+            "get_post_comments",
+            {"post": "7214916299838103554", "sort_by": "oldest"},
+            "sort_by must be one of relevant, recent",
+        ),
     ],
 )
 async def test_invalid_reference_is_rejected_before_extractor(
@@ -203,12 +225,14 @@ async def test_invalid_reference_is_rejected_before_extractor(
     from linkedin_mcp_server.tools.job import register_job_tools
     from linkedin_mcp_server.tools.messaging import register_messaging_tools
     from linkedin_mcp_server.tools.person import register_person_tools
+    from linkedin_mcp_server.tools.post import register_post_tools
 
     register_by_module = {
         "company": register_company_tools,
         "job": register_job_tools,
         "messaging": register_messaging_tools,
         "person": register_person_tools,
+        "post": register_post_tools,
     }
     mcp = FastMCP("test")
     register_by_module[module_name](mcp)
@@ -246,6 +270,8 @@ async def test_invalid_reference_is_rejected_before_extractor(
         ),
         ("feed", "get_feed", {}),
         ("post", "search_posts", {"keywords": "python"}),
+        ("post", "get_post_comments", {"post": "7214916299838103554"}),
+        ("notification", "get_notifications", {}),
     ],
 )
 async def test_valid_input_reaches_the_patched_readiness_call(
@@ -1083,6 +1109,49 @@ class TestCompanyTools:
         assert result["sections"]["posts"] == "Post 1\nPost 2"
         assert "pages_visited" not in result
         assert "sections_requested" not in result
+
+    async def test_get_company_posts_returns_structured_posts(
+        self, mock_context, serve_extractor
+    ):
+        mock_extractor = MagicMock()
+        mock_extractor.extract_page = AsyncMock(
+            return_value=ExtractedSection(
+                text=(
+                    "Feed post number 1\nAcme\n2w \u2022\nWe are hiring.\n"
+                    "12\n3 comments\n1 repost\nLike\nComment"
+                ),
+                references=[
+                    {
+                        "kind": "feed_post",
+                        "url": "/feed/update/urn:li:activity:7214916299838103554/",
+                    }
+                ],
+            )
+        )
+
+        from linkedin_mcp_server.tools.company import register_company_tools
+
+        mcp = FastMCP("test")
+        register_company_tools(mcp)
+
+        serve_extractor(mock_extractor)
+        tool_fn = await get_tool_fn(mcp, "get_company_posts")
+        result = await tool_fn("testcorp", mock_context)
+
+        assert result["posts"] == [
+            {
+                "index": 0,
+                "text": "We are hiring.",
+                "reactions": 12,
+                "comments": 3,
+                "reposts": 1,
+                "impressions": None,
+                "author": "Acme",
+                "time": "2w",
+                "url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+                "activity_id": "7214916299838103554",
+            }
+        ]
 
     async def test_get_company_posts_passes_max_scrolls(
         self, mock_context, serve_extractor
@@ -2238,6 +2307,37 @@ class TestFeedTools:
         assert result["sections"]["feed"] == "Post 1\nPost 2"
         assert "posts" not in result
 
+    async def test_get_feed_returns_structured_posts(
+        self, mock_context, serve_extractor
+    ):
+        mock_extractor = MagicMock()
+        mock_extractor.extract_feed = AsyncMock(
+            return_value=ExtractedSection(
+                text=(
+                    "Feed post number 1\nPat\n3d \u2022\nHello feed.\n4\nLike\nComment"
+                ),
+                references=[],
+            )
+        )
+
+        from linkedin_mcp_server.tools.feed import register_feed_tools
+
+        mcp = FastMCP("test")
+        register_feed_tools(mcp)
+
+        serve_extractor(mock_extractor)
+        tool_fn = await get_tool_fn(mcp, "get_feed")
+        result = await tool_fn(mock_context)
+
+        [post] = result["posts"]
+        assert (post["author"], post["time"], post["text"]) == (
+            "Pat",
+            "3d",
+            "Hello feed.",
+        )
+        assert post["reactions"] == 4 and post["comments"] is None
+        assert "url" not in post
+
     async def test_get_feed_surfaces_references(self, mock_context, serve_extractor):
         """References from the extractor flow through to the tool result."""
         mock_extractor = MagicMock()
@@ -2373,7 +2473,87 @@ class TestFeedTools:
             await mcp.call_tool("get_feed", {"num_posts": 51})
 
 
+class TestNotificationTools:
+    async def test_get_notifications_passes_the_filter_and_limit_through(
+        self, mock_context, serve_extractor
+    ):
+        expected = {
+            "url": "https://www.linkedin.com/notifications/?filter=my_posts",
+            "filter": "my_posts",
+            "notifications": [{"index": 0, "action_type": "post", "headline": "x"}],
+        }
+        mock_extractor = _make_mock_extractor(expected)
+
+        from linkedin_mcp_server.tools.notification import register_notification_tools
+
+        mcp = FastMCP("test")
+        register_notification_tools(mcp)
+        serve_extractor(mock_extractor)
+        tool_fn = await get_tool_fn(mcp, "get_notifications")
+
+        result = await tool_fn(mock_context, filter_by="my_posts", limit=5)
+
+        assert result == expected
+        mock_extractor.get_notifications.assert_awaited_once_with("my_posts", 5)
+
+    @pytest.mark.parametrize(
+        ("arguments", "field"),
+        [({"filter_by": "mentions"}, "filter_by"), ({"limit": 101}, "limit")],
+    )
+    async def test_get_notifications_rejects_arguments_outside_its_schema(
+        self, arguments, field
+    ):
+        from fastmcp.exceptions import ValidationError
+
+        from linkedin_mcp_server.tools.notification import register_notification_tools
+
+        mcp = FastMCP("test")
+        register_notification_tools(mcp)
+
+        with pytest.raises(ValidationError, match=field):
+            await mcp.call_tool("get_notifications", arguments)
+
+
 class TestPostTools:
+    async def test_get_post_comments_passes_the_request_through(
+        self, mock_context, serve_extractor
+    ):
+        expected = {
+            "url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+            "comments": [{"index": 0, "author": "Jane Roe", "text": "Hi"}],
+        }
+        mock_extractor = _make_mock_extractor(expected)
+
+        from linkedin_mcp_server.tools.post import register_post_tools
+
+        mcp = FastMCP("test")
+        register_post_tools(mcp)
+        serve_extractor(mock_extractor)
+        tool_fn = await get_tool_fn(mcp, "get_post_comments")
+
+        result = await tool_fn(
+            "7214916299838103554", mock_context, sort_by="recent", max_load_more=2
+        )
+
+        assert result == expected
+        mock_extractor.get_post_comments.assert_awaited_once_with(
+            "7214916299838103554", sort_by="recent", max_load_more=2
+        )
+
+    async def test_get_post_comments_rejects_an_oversized_load_budget(self):
+        from fastmcp.exceptions import ValidationError
+
+        from linkedin_mcp_server.tools.post import register_post_tools
+
+        mcp = FastMCP("test")
+        register_post_tools(mcp)
+
+        with pytest.raises(ValidationError, match="max_load_more"):
+            await mcp.call_tool(
+                "get_post_comments",
+                {"post": "7214916299838103554", "max_load_more": 11},
+            )
+
     async def test_search_posts_success(self, mock_context, serve_extractor):
         expected = {
             "url": (

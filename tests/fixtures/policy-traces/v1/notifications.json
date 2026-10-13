@@ -1,0 +1,119 @@
+{
+  "call": {
+    "arguments": {
+      "filter_by": "my_posts",
+      "limit": 10
+    },
+    "method": "get_notifications"
+  },
+  "events": [
+    {
+      "call": "get_notifications",
+      "callback_id": "callback-1",
+      "event": "framenavigated",
+      "kind": "listener.add"
+    },
+    {
+      "call": "get_notifications",
+      "extra": {
+        "target_url": "https://www.linkedin.com/notifications/?filter=my_posts",
+        "wait_until": "domcontentloaded"
+      },
+      "kind": "boundary.trace",
+      "label": "extractor-before-goto"
+    },
+    {
+      "call": "get_notifications",
+      "kind": "navigate",
+      "landed_url": "https://www.linkedin.com/notifications/?filter=my_posts",
+      "requested_url": "https://www.linkedin.com/notifications/?filter=my_posts",
+      "timeout_ms": 30000,
+      "wait_until": "domcontentloaded"
+    },
+    {
+      "call": "get_notifications",
+      "description": "goto https://www.linkedin.com/notifications/?filter=my_posts",
+      "kind": "boundary.stabilize",
+      "result": null
+    },
+    {
+      "call": "get_notifications",
+      "extra": {
+        "target_url": "https://www.linkedin.com/notifications/?filter=my_posts",
+        "wait_until": "domcontentloaded"
+      },
+      "kind": "boundary.trace",
+      "label": "extractor-after-goto"
+    },
+    {
+      "call": "get_notifications",
+      "kind": "boundary.auth_quick",
+      "result": null
+    },
+    {
+      "call": "get_notifications",
+      "callback_id": "callback-1",
+      "event": "framenavigated",
+      "kind": "listener.remove"
+    },
+    {
+      "call": "get_notifications",
+      "kind": "boundary.rate_limit"
+    },
+    {
+      "call": "get_notifications",
+      "kind": "wait_for_selector",
+      "operation": "main",
+      "selector": "main",
+      "state": "visible",
+      "timeout_ms": null
+    },
+    {
+      "call": "get_notifications",
+      "dismissed": false,
+      "kind": "boundary.modal"
+    },
+    {
+      "actual_scrolls": 2,
+      "call": "get_notifications",
+      "kind": "boundary.scroll_body",
+      "max_scrolls": 1,
+      "pause_time": 1.0
+    },
+    {
+      "arg": {
+        "selectors": [
+          "main"
+        ]
+      },
+      "call": "get_notifications",
+      "kind": "evaluate",
+      "operation": "root_content",
+      "program_digest": "e6b2be4ebddd"
+    },
+    {
+      "call": "get_notifications",
+      "kind": "evaluate",
+      "operation": "notification_cards",
+      "program_digest": "ecf8bf0048f5"
+    }
+  ],
+  "result": {
+    "filter": "my_posts",
+    "notifications": [
+      {
+        "action_type": "post",
+        "actor": "Charles Babbage",
+        "actor_url": "/in/charles-babbage/",
+        "headline": "Charles Babbage reacted to your post",
+        "index": 0,
+        "post_url": "https://www.linkedin.com/feed/update/urn:li:activity:7214916299838103554/",
+        "time": "2h",
+        "url": "/in/charles-babbage/"
+      }
+    ],
+    "url": "https://www.linkedin.com/notifications/?filter=my_posts"
+  },
+  "scenario": "get_notifications__my_posts",
+  "schema_version": 1
+}

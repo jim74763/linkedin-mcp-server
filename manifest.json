@@ -124,6 +124,14 @@
       "description": "Search LinkedIn posts/content globally by keyword (the 'Posts' tab) with an optional recency filter (past-24h/past-week/past-month); returns unordered candidate permalinks in references"
     },
     {
+      "name": "get_post_comments",
+      "description": "Read the comments on a LinkedIn post by URL, activity URN or id, with author, text, relative time and reply nesting, optionally most recent first"
+    },
+    {
+      "name": "get_notifications",
+      "description": "Read the LinkedIn notifications page, optionally only the My posts list, as structured items with actor, kind, post snippet and relative time"
+    },
+    {
       "name": "close_session",
       "description": "Properly close browser session and clean up resources"
     }

@@ -8,6 +8,7 @@ from patchright.async_api import Page
 
 from linkedin_mcp_server.config.schema import DEFAULT_TOOL_TIMEOUT_SECONDS
 from linkedin_mcp_server.linkedin.capture import SectionCapture
+from linkedin_mcp_server.linkedin.comments import CommentReader
 from linkedin_mcp_server.linkedin.company import CompanyReader
 from linkedin_mcp_server.linkedin.connection_actions import ConnectionActions
 from linkedin_mcp_server.linkedin.content import PageContentReader
@@ -23,6 +24,7 @@ from linkedin_mcp_server.linkedin.job_policy import JobsTrackerStage
 from linkedin_mcp_server.linkedin.jobs import JobReader
 from linkedin_mcp_server.linkedin.message_sender import MessageSender
 from linkedin_mcp_server.linkedin.navigation import PageNavigator
+from linkedin_mcp_server.linkedin.notifications import NotificationReader
 from linkedin_mcp_server.linkedin.person import PersonReader
 from linkedin_mcp_server.linkedin.posts import PostSearch
 from linkedin_mcp_server.linkedin.profile_page import ProfilePageReader
@@ -66,6 +68,8 @@ class LinkedInExtractor:
         job_pages = JobPageReader(session, navigator, content)
         self._jobs = JobReader(navigator, capture, job_pages)
         self._posts = PostSearch(capture)
+        self._comments = CommentReader(session, navigator, content)
+        self._notifications = NotificationReader(session, navigator, content)
         self._conversations = ConversationReader(
             session, navigator, content, profile_page
         )
@@ -226,6 +230,23 @@ class LinkedInExtractor:
             date_posted=date_posted,
             max_pages=max_pages,
         )
+
+    async def get_post_comments(
+        self,
+        post: str,
+        sort_by: str | None = None,
+        max_load_more: int = 3,
+    ) -> dict[str, Any]:
+        """Read the comments under one post, optionally most recent first."""
+        return await self._comments.get_post_comments(
+            post, sort_by=sort_by, max_load_more=max_load_more
+        )
+
+    async def get_notifications(
+        self, filter_by: str = "all", limit: int = 30
+    ) -> dict[str, Any]:
+        """Read the notifications page, optionally only activity on own posts."""
+        return await self._notifications.get_notifications(filter_by, limit)
 
     async def get_inbox(self, limit: int = 20) -> dict[str, Any]:
         """List recent conversations from the messaging inbox."""
